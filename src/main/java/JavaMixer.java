@@ -5,13 +5,12 @@ import javax.swing.border.Border;
 import java.awt.*;
 
 
-public class MixerGUI
+public class JavaMixer
 {
     private JFrame mainWindow;
 
-    MigLayout layout = new MigLayout();
 
-    public MixerGUI(){
+    public JavaMixer(){
         init();
     }
 
@@ -23,6 +22,10 @@ public class MixerGUI
         mainWindow.setResizable(true);
         mainWindow.setLocationRelativeTo(null);
         mainWindow.setVisible(true);
+
+        AudioSettingUI settingMenu = new AudioSettingUI();
+
+        mainWindow.setContentPane(settingMenu);
     }
 
 }

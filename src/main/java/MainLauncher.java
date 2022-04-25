@@ -1,11 +1,11 @@
 import javax.swing.*;
 
-public class MixerLauncher {
+public class MainLauncher {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                MixerGUI frame = new MixerGUI();
+                JavaMixer frame = new JavaMixer();
             }
         });
     }
