@@ -161,24 +161,6 @@ public class CapturePlayback extends JPanel implements Runnable, ActionListener 
     }
 
 
-    public void saveSettings() {
-        try {
-            FileOutputStream file = new FileOutputStream("settings");
-            ObjectOutputStream out = new ObjectOutputStream(file);
-
-            out.close();
-            file.close();
-
-            System.out.println("File has been saved");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
 
     private class Playback implements Runnable {
 

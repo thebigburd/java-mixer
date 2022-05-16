@@ -4,6 +4,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -36,9 +37,9 @@ class AudioSettingControl extends JPanel implements ActionListener {
     Vector audioSelections = new Vector<String>(6);
 
     public AudioSettingControl() {
+        // Load Saved Settings
+        loadSettings();
 
-        // Load Default Dropdown box selections
-        loadSelections();
         // Initialise UI
         init();
     }
@@ -75,7 +76,8 @@ class AudioSettingControl extends JPanel implements ActionListener {
         okB.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                saveSelections();
+                applySelections();
+                saveSettings();
             }
         });
 
@@ -91,13 +93,24 @@ class AudioSettingControl extends JPanel implements ActionListener {
 
     }
 
-    private void saveSelections() {
+    private void applySelections() {
         try {
-            audioSettings.setSavedSettings(audioSelections);
+            audioSettings.savedSettings = (Vector) audioSelections.clone();
+            System.out.println("Saved: "+ audioSettings.savedSettings);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     *  Resets combobox selections
+     */
+    private void resetToDefault() {
+        // Set audioSelections values
+        resetAudioSelections();
+        // Set Combobox's visible selection
+        resetComboBoxes();
     }
 
     // INCOMPLETE
@@ -123,7 +136,8 @@ class AudioSettingControl extends JPanel implements ActionListener {
     }
 
 
-    private void resetToDefault() {
+
+    private void resetAudioSelections(){
         setAudioEncodingGroup(audioEncodingGroup[1]);
         setSampleRateGroup(sampleRateGroup[4]);
         setSampleSizeGroup(sampleSizeGroup[1]);
@@ -132,16 +146,101 @@ class AudioSettingControl extends JPanel implements ActionListener {
         setChannelGroup(channelGroup[1]);
     }
 
+    private void resetComboBoxes(){
+        audioEncodings.setSelectedItem(audioEncodingGroup[1]);
+        sampleRates.setSelectedItem(sampleRateGroup[4]);
+        sampleSizes.setSelectedItem(sampleSizeGroup[1]);
+        endians.setSelectedItem(endianGroup[1]);
+        signs.setSelectedItem(signGroup[0]);
+        channels.setSelectedItem(channelGroup[1]);
+    }
+
     /**
-     * Method to prevent audioSelections array from being null
+     * Method to prevent audioSelections and audioSettings vectors from being null on first launch
+     *
      */
     private void loadSelections() {
-        audioSelections.add(audioEncodingGroup[0]);
-        audioSelections.add(sampleRateGroup[0]);
-        audioSelections.add(sampleSizeGroup[0]);
-        audioSelections.add(endianGroup[0]);
-        audioSelections.add(signGroup[0]);
-        audioSelections.add(channelGroup[0]);
+        // First time launch
+        if(audioSettings == null){
+            // Add vector entries for all setting categories
+            audioSelections.add(audioEncodingGroup[1]);
+            audioSelections.add(sampleRateGroup[4]);
+            audioSelections.add(sampleSizeGroup[1]);
+            audioSelections.add(endianGroup[1]);
+            audioSelections.add(signGroup[0]);
+            audioSelections.add(channelGroup[1]);
+            resetComboBoxes();
+            audioSettings = new AudioSettings();
+            audioSettings.setSavedSettings(audioSelections);
+            System.out.println("AudioSettings and AudioSelections filled.");
+        }
+        else{
+            // Fill vector entries for audioSelections
+            audioSelections.add(audioEncodingGroup[1]);
+            audioSelections.add(sampleRateGroup[4]);
+            audioSelections.add(sampleSizeGroup[1]);
+            audioSelections.add(endianGroup[1]);
+            audioSelections.add(signGroup[0]);
+            audioSelections.add(channelGroup[1]);
+            audioSelections = (Vector) audioSettings.getSavedSettings().clone();
+            // Change ComboBox displayed selections to saved settings.
+            audioEncodings.setSelectedItem(getAudioEncodingSelection());
+            sampleRates.setSelectedItem(getSampleRateSelection());
+            sampleSizes.setSelectedItem(getSampleSizeSelection());
+            endians.setSelectedItem(getEndianSelection());
+            signs.setSelectedItem(getSignSelection());
+            channels.setSelectedItem(getChannelSelection());
+            System.out.println("AudioSelections filled.");
+        }
+    }
+
+    public void saveSettings() {
+        try {
+            FileOutputStream file = new FileOutputStream("settings");
+            ObjectOutputStream out = new ObjectOutputStream(file);
+
+            out.writeObject(audioSettings);
+
+            // Prevent false EoF exceptions
+            out.writeObject(new EofIndicator());
+
+            out.close();
+            file.close();
+
+            System.out.println("Settings have been saved");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadSettings(){
+        try{
+            FileInputStream file = new FileInputStream("settings");
+            ObjectInputStream in = new ObjectInputStream(file);
+            Object obj;
+
+            // Check for End of file
+            while (!((obj = in.readObject()) instanceof EofIndicator)){
+                audioSettings = new AudioSettings();
+                audioSettings = (AudioSettings) obj;
+            }
+
+            in.close();
+            file.close();
+
+            System.out.println("Settings: " + audioSettings.getSavedSettings());
+            loadSelections();
+            System.out.println("Settings have been loaded");
+        } catch (FileNotFoundException e) {
+            System.out.println("No saved settings found. Loading default settings.");
+            loadSelections();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -154,22 +253,22 @@ class AudioSettingControl extends JPanel implements ActionListener {
         final JComboBox<String> source = (JComboBox<String>) e.getSource();
         if (audioEncodings == source) {
             setAudioEncodingGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         } else if (sampleRates == source) {
             setSampleRateGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         } else if (sampleSizes == source) {
             setSampleSizeGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         } else if (endians == source) {
             setEndianGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         } else if (signs == source) { // Signs
             setSignGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         } else {
             setChannelGroup((String) source.getSelectedItem());
-            System.out.println(audioSelections);
+            System.out.println("Selections: "+ audioSelections);
         }
 
     }
@@ -198,8 +297,27 @@ class AudioSettingControl extends JPanel implements ActionListener {
         audioSelections.set(5, selection);
     }
 
-    public Vector getAudioSelections() {
-        return audioSelections;
+    private String getAudioEncodingSelection(){
+        return (String) audioSelections.elementAt(0);
     }
 
+    private String getSampleRateSelection(){
+        return (String) audioSelections.elementAt(1);
+    }
+
+    private String getSampleSizeSelection(){
+        return (String) audioSelections.elementAt(2);
+    }
+
+    private String getEndianSelection(){
+        return (String) audioSelections.elementAt(3);
+    }
+
+    private String getSignSelection(){
+        return (String) audioSelections.elementAt(4);
+    }
+
+    private String getChannelSelection(){
+        return (String) audioSelections.elementAt(5);
+    }
 }
