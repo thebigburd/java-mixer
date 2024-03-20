@@ -9,14 +9,18 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 /**
+ *  Class that controls the user's audio setting selections.
  *
+ * @version 1.00
+ *
+ * @author Richard Lam
  */
 class AudioSettingControl extends JPanel implements ActionListener {
 
 
     final String[] audioEncodingGroup = {"linear", "ulaw", "alaw"};
     final String[] sampleRateGroup = {"8000", "11025", "16000", "22050",
-            "44100Hz", "48000Hz"};
+            "44100", "48000"};
     final String[] sampleSizeGroup = {"8", "16"};
     final String[] endianGroup = {"little endian", "big endian"};
     final String[] signGroup = {"signed", "unsigned"};
@@ -72,12 +76,13 @@ class AudioSettingControl extends JPanel implements ActionListener {
         add(channels);
 
         // Add Buttons
-        JButton okB = new JButton("OK");
+        JButton okB = new JButton("Apply");
         okB.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 applySelections();
                 saveSettings();
+                JavaMixer.settingsAppliedDialog();
             }
         });
 
@@ -113,32 +118,43 @@ class AudioSettingControl extends JPanel implements ActionListener {
         resetComboBoxes();
     }
 
-    // INCOMPLETE
+    /**
+     * Method to get an AudioFormat object to use when operating a Capture input stream.
+     * Note: Bit Rate = Sample Rate * Sample Size * No.Channels
+     *      Frame Size = Sample Size / No.Channels
+     * @return AudioFormat object containing all the user's chosen audio settings.
+     */
     public AudioFormat getAudioFormat() {
-        Vector v = new Vector(audioSettings.getSavedSettings().size());
-        Enumeration e = v.elements();
 
-        while (e.hasMoreElements()) {
-            System.out.println(e.nextElement());
+        AudioFormat.Encoding encoding = AudioFormat.Encoding.ULAW;  // ULAW is 8 Bit and Unsigned
+        String encStr = (String) audioSettings.getSavedSettings().get(0);
+        float rate = Float.valueOf((String) audioSettings.getSavedSettings().get(1));
+        int sampleSize = Integer.valueOf((String) audioSettings.getSavedSettings().get(2));
+        boolean bigEndian = ((String) audioSettings.getSavedSettings().get(3)).startsWith("big");
+        String signedStr = (String) audioSettings.getSavedSettings().get(4);
+        int channels = (audioSettings.getSavedSettings().get(5)).equals("mono") ? 1 : 2;
+
+        if (encStr.equals("linear")) {
+            if (signedStr.equals("signed")) {
+                encoding = AudioFormat.Encoding.PCM_SIGNED;
+            } else {
+                encoding = AudioFormat.Encoding.PCM_UNSIGNED;
+            }
+        } else if (encStr.equals("alaw")) {
+            encoding = AudioFormat.Encoding.ALAW; // ALaw is 8 Bit and Unsigned.
         }
-        AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
-        float rate = 44100;
-        int sampleSize = 16;
-        String signed = "signed";
-        int channels = 2;
-        boolean bigEndian = true;
 
-        return new AudioFormat(encoding, rate, sampleSize, channels, (sampleSize / 8) * channels, rate, bigEndian);
-    }
-
-    public void setFormat(AudioFormat format) {
-
+        return new AudioFormat(encoding, rate, sampleSize,
+                channels, (sampleSize/8)*channels, rate, bigEndian);
     }
 
 
 
+    /**
+     *  Resets current AudioSelection vector entries to default. Used in ResetToDefault
+     */
     private void resetAudioSelections(){
-        setAudioEncodingGroup(audioEncodingGroup[1]);
+        setAudioEncodingGroup(audioEncodingGroup[0]);
         setSampleRateGroup(sampleRateGroup[4]);
         setSampleSizeGroup(sampleSizeGroup[1]);
         setEndianGroup(endianGroup[1]);
@@ -146,8 +162,11 @@ class AudioSettingControl extends JPanel implements ActionListener {
         setChannelGroup(channelGroup[1]);
     }
 
+    /**
+     *  Resets ComboBox visible selections to default.
+     */
     private void resetComboBoxes(){
-        audioEncodings.setSelectedItem(audioEncodingGroup[1]);
+        audioEncodings.setSelectedItem(audioEncodingGroup[0]);
         sampleRates.setSelectedItem(sampleRateGroup[4]);
         sampleSizes.setSelectedItem(sampleSizeGroup[1]);
         endians.setSelectedItem(endianGroup[1]);
@@ -163,7 +182,7 @@ class AudioSettingControl extends JPanel implements ActionListener {
         // First time launch
         if(audioSettings == null){
             // Add vector entries for all setting categories
-            audioSelections.add(audioEncodingGroup[1]);
+            audioSelections.add(audioEncodingGroup[0]);
             audioSelections.add(sampleRateGroup[4]);
             audioSelections.add(sampleSizeGroup[1]);
             audioSelections.add(endianGroup[1]);
@@ -176,7 +195,7 @@ class AudioSettingControl extends JPanel implements ActionListener {
         }
         else{
             // Fill vector entries for audioSelections
-            audioSelections.add(audioEncodingGroup[1]);
+            audioSelections.add(audioEncodingGroup[0]);
             audioSelections.add(sampleRateGroup[4]);
             audioSelections.add(sampleSizeGroup[1]);
             audioSelections.add(endianGroup[1]);
@@ -194,6 +213,9 @@ class AudioSettingControl extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     *  Saves the user's chosen Audio settings.
+     */
     public void saveSettings() {
         try {
             FileOutputStream file = new FileOutputStream("settings");
@@ -215,6 +237,10 @@ class AudioSettingControl extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     *  Loads Settings file that the User has saved in their directory.
+     *  If no Settings file is found then default audio format settings are set.
+     */
     private void loadSettings(){
         try{
             FileInputStream file = new FileInputStream("settings");
@@ -253,22 +279,22 @@ class AudioSettingControl extends JPanel implements ActionListener {
         final JComboBox<String> source = (JComboBox<String>) e.getSource();
         if (audioEncodings == source) {
             setAudioEncodingGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         } else if (sampleRates == source) {
             setSampleRateGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         } else if (sampleSizes == source) {
             setSampleSizeGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         } else if (endians == source) {
             setEndianGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         } else if (signs == source) { // Signs
             setSignGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         } else {
             setChannelGroup((String) source.getSelectedItem());
-            System.out.println("Selections: "+ audioSelections);
+//            System.out.println("Selections: "+ audioSelections);
         }
 
     }

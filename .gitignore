@@ -6,6 +6,14 @@
 
 *.iml
 
+# Compile
+target
+
+# Audio Recordings
+*.wav
+*.aiff
+*.au
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 

@@ -2,7 +2,11 @@ import java.io.Serializable;
 import java.util.Vector;
 
 /**
+ *  AudioSettings Serialisable Object
+ *  Stores the settings the user has selected for Audio Format.
  *
+ * @version 1.00
+ * @author Richard Lam
  */
 public class AudioSettings  implements Serializable {
 
