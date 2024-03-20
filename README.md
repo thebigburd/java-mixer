@@ -1,2 +1,2 @@
 # java-mixer
- An audio editing application implemented with Java Sound and Java Swing
+ An audio recording application implemented with Java Sound and Java Swing
